@@ -38,6 +38,25 @@ def clean_zipcode(zipcode)
   end
 end
 
+def claen_phone_number(phone_number)
+  phone_number = phone_number.gsub("-", "")
+  
+  if phone_number.length < 10
+    phone_number = "Bad number"
+  elsif phone_number.length == 10
+    phone_number = phone_number
+  elsif phone_number.length == 11 && phone_number[0] == 1
+    phone_number = phone_number[1..11]  
+  elsif phone_number.length == 11 && phone_number[0] != 1
+    phone_number = "Bad number" 
+  elsif phone_number.length > 11
+    phone_number = "Bad number" 
+  else
+    phone_number  
+  end
+end
+
+
 def save_thank_you_letter(id,form_letter)
   Dir.mkdir('output') unless Dir.exist?('output')
 
@@ -58,15 +77,31 @@ contents = CSV.open(
     headers: true,
     header_converters: :symbol
 )
+
 contents.each do |row|
   id = row[0]
   name = row[:first_name]
+  phone_number = claen_phone_number(row[:homephone])
+
+
   zipcode = clean_zipcode(row[:zipcode])
   legislators = legislators_by_zipcode(zipcode)
 
   form_letter = erb_template.result(binding)
 
-  save_thank_you_letter(id,form_letter)
+  #save_thank_you_letter(id,form_letter)
+  puts phone_number
+end  
 
-end   
+
+
+# If the phone number is less than 10 digits, assume that it is a bad number
+# If the phone number is 10 digits, assume that it is good
+# If the phone number is 11 digits and the first number is 1, trim the 1 and use the remaining 10 digits
+# If the phone number is 11 digits and the first number is not 1, then it is a bad number
+# If the phone number is more than 11 digits, assume that it is a bad number
+
+#Cleaning phone numbers
+
+
  
