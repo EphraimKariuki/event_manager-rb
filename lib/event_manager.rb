@@ -9,7 +9,7 @@ def legislators_by_zipcode(zip)
 
   begin
     legislators = civic_info.representative_info_by_address(
-      address: zipcode,
+      address: zip,
       levels: 'country',
       roles: ['legislatorUpperBody', 'legislatorLowerBody']
     )
@@ -21,11 +21,8 @@ def legislators_by_zipcode(zip)
 
     legislators_string = legislator_names.join(", ")
   rescue
-    'You can find your representatives by visiting www.commoncause.org/take-action/find-elected-officials'
-    
+    'You can find your representatives by visiting www.commoncause.org/take-action/find-elected-officials' 
   end
-  
-
 end  
 
 def clean_zipcode(zipcode)
@@ -42,6 +39,7 @@ end
 
 puts "Event Manager Initialized"
 
+template_letter = File.read('form_letter.html')
 
 contents = CSV.open(
     'event_attendees.csv', 
@@ -52,6 +50,9 @@ contents.each do |row|
   name = row[:first_name]
   zipcode = clean_zipcode(row[:zipcode])
   legislators = legislators_by_zipcode(zipcode)
+
+  personal_letter = template_letter.gsub('FIRST_NAME', name)
+  personal_letter.gsub!('LEGISLATORS', legislators)
  
   puts "#{name}  #{zipcode} #{legislators}"
 end   
