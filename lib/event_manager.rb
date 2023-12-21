@@ -1,6 +1,7 @@
 require 'csv'
 require 'google/apis/civicinfo_v2'
 require 'erb'
+require 'date'
 
 
 
@@ -38,9 +39,11 @@ def clean_zipcode(zipcode)
   end
 end
 
-def claen_phone_number(phone_number)
+def clean_phone_number(phone_number)
   phone_number = phone_number.gsub("-", "")
-  
+  phone_number = phone_number.gsub("(", "")
+  phone_number = phone_number.gsub(")", "")
+
   if phone_number.length < 10
     phone_number = "Bad number"
   elsif phone_number.length == 10
@@ -67,6 +70,10 @@ def save_thank_you_letter(id,form_letter)
   end
 end
 
+def count_max(array)
+  array.max_by {|item| array.count(item)}
+end  
+
 puts "Event Manager Initialized"
 
 template_letter = File.read('form_letter.erb')
@@ -77,31 +84,56 @@ contents = CSV.open(
     headers: true,
     header_converters: :symbol
 )
-
+dates = []
+hours_of_day = []
+wdays = []
+index = 0
 contents.each do |row|
   id = row[0]
   name = row[:first_name]
-  phone_number = claen_phone_number(row[:homephone])
-
-
+  phone_number = clean_phone_number(row[:homephone])
   zipcode = clean_zipcode(row[:zipcode])
+
+  reg_date = DateTime.strptime(row[:regdate], "%m/%d/%y %H:%M")
+  hours_of_day[index] = reg_date.hour
+  wdays[index] = reg_date.wday
+  dates[index] = reg_date
+  index += 1
+  
+
   legislators = legislators_by_zipcode(zipcode)
 
   form_letter = erb_template.result(binding)
 
-  #save_thank_you_letter(id,form_letter)
-  puts phone_number
+  save_thank_you_letter(id,form_letter)
+  #puts phone_number
+  # puts wdays[index]
+end 
+#convert wdays in actual day names of the week
+days_of_week = []
+wdays.each_with_index do |day, index|
+  case day
+  when 0
+    days_of_week[index] = "Monday"
+  when 1
+    days_of_week[index] = "Tuesday"
+  when 2
+    days_of_week[index] = "Wednesday"
+  when 3 
+    days_of_week[index] = "Thursday"
+  when 4
+    days_of_week[index] = "Friday"
+  when 5
+    days_of_week[index] = "Saturday" 
+  else 
+    days_of_week[index] = "Sunday" 
+  end       
 end  
 
+puts "The most active Hour is: #{count_max(hours_of_day)}:00 hours"
+puts "The most active Day is #{count_max(days_of_week)}"
 
 
-# If the phone number is less than 10 digits, assume that it is a bad number
-# If the phone number is 10 digits, assume that it is good
-# If the phone number is 11 digits and the first number is 1, trim the 1 and use the remaining 10 digits
-# If the phone number is 11 digits and the first number is not 1, then it is a bad number
-# If the phone number is more than 11 digits, assume that it is a bad number
-
-#Cleaning phone numbers
 
 
  
